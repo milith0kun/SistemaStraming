@@ -387,20 +387,25 @@ function hideOverlay() {
 function updateLiveIndicator(isLive) {
     const indicator = document.getElementById('liveIndicator');
     const text = indicator.querySelector('.live-text');
+    const streamStatus = document.getElementById('streamStatus');
 
     if (isLive) {
         indicator.classList.add('active');
-        text.textContent = 'EN VIVO';
+        text.textContent = 'LIVE';
+        if (streamStatus) streamStatus.textContent = 'Transmitiendo';
     } else {
         indicator.classList.remove('active');
-        text.textContent = 'ESPERANDO STREAM';
+        text.textContent = 'OFFLINE';
+        if (streamStatus) streamStatus.textContent = 'Esperando...';
     }
 }
 
 function updateStreamUrls() {
     const streamKey = document.getElementById('streamKey').value || 'stream';
-    document.getElementById('hlsUrl').textContent =
-        `${CONFIG.mediaServerUrl}/live/${streamKey}.flv`;
+    const streamKeyDisplay = document.getElementById('streamKeyDisplay');
+    if (streamKeyDisplay) {
+        streamKeyDisplay.textContent = streamKey;
+    }
 }
 
 // ============================================================================
@@ -508,10 +513,15 @@ function leaveStream(streamKey) {
 
 function updateViewerDisplay() {
     const currentViewersElement = document.getElementById('currentViewers');
+    const currentViewers2Element = document.getElementById('currentViewers2');
     const peakViewersElement = document.getElementById('peakViewersCount');
 
     if (currentViewersElement) {
         currentViewersElement.textContent = viewersCount;
+    }
+
+    if (currentViewers2Element) {
+        currentViewers2Element.textContent = viewersCount;
     }
 
     if (peakViewersElement) {
