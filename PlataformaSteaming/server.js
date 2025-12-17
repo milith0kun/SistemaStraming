@@ -55,6 +55,31 @@ app.get('/api/status', async (req, res) => {
     }
 });
 
+// API endpoint para verificar si un stream específico está activo
+app.get('/api/stream-status/:streamKey', async (req, res) => {
+    const { streamKey } = req.params;
+    try {
+        const response = await fetch('http://localhost:8000/api/streams');
+        const data = await response.json();
+
+        // Verificar si el stream está en la lista de streams activos
+        const streamPath = `/live/${streamKey}`;
+        const isLive = data && data.live && data.live[streamPath];
+
+        res.json({
+            streamKey,
+            isLive: !!isLive,
+            streamData: isLive || null
+        });
+    } catch (error) {
+        res.json({
+            streamKey,
+            isLive: false,
+            error: 'Could not check stream status'
+        });
+    }
+});
+
 // API endpoint para obtener estadísticas de viewers
 app.get('/api/viewers/:streamKey?', (req, res) => {
     const { streamKey } = req.params;
@@ -125,6 +150,28 @@ io.on('connection', (socket) => {
     // Cuando un viewer sale de un stream
     socket.on('leave-stream', (streamKey) => {
         handleViewerLeave(socket.id, streamKey);
+    });
+
+    // Chat - Cuando un usuario envía un mensaje
+    socket.on('chat-message', (data) => {
+        const { streamKey, username, message } = data;
+        console.log(`[Chat] ${username} en ${streamKey}: ${message}`);
+
+        // Validar datos
+        if (!streamKey || !username || !message || message.trim().length === 0) {
+            return;
+        }
+
+        // Prevenir mensajes muy largos
+        const sanitizedMessage = message.substring(0, 500);
+
+        // Emitir mensaje a todos en el stream
+        io.to(streamKey).emit('chat-message', {
+            id: Date.now() + socket.id,
+            username: username.substring(0, 50),
+            message: sanitizedMessage,
+            timestamp: Date.now()
+        });
     });
 
     // Cuando un viewer se desconecta

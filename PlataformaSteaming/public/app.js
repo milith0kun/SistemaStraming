@@ -25,6 +25,8 @@ let socket = null;
 let currentStreamKey = 'stream';
 let viewersCount = 0;
 let peakViewersCount = 0;
+let streamStatusInterval = null;
+let username = localStorage.getItem('streaming_username') || '';
 
 // ============================================================================
 // Configuración
@@ -55,6 +57,10 @@ document.addEventListener('DOMContentLoaded', () => {
     checkServerStatus();
     setInterval(checkServerStatus, CONFIG.statusCheckInterval);
 
+    // Verificar estado del stream periódicamente
+    checkStreamStatus();
+    streamStatusInterval = setInterval(checkStreamStatus, 3000);
+
     // Event listeners del video
     setupVideoEventListeners();
 
@@ -64,6 +70,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Inicializar Socket.IO para tracking de viewers
     initializeSocket();
+
+    // Inicializar chat
+    initializeChat();
 
     console.log('🎬 Plataforma de Streaming inicializada');
 });
@@ -483,6 +492,9 @@ function initializeSocket() {
             updateViewerDisplay();
         });
 
+        // Listener de mensajes de chat
+        socket.on('chat-message', displayChatMessage);
+
         socket.on('disconnect', () => {
             console.log('⚠️ Desconectado de Socket.IO');
         });
@@ -530,11 +542,141 @@ function updateViewerDisplay() {
 }
 
 // ============================================================================
+// Stream Status Check - Verificar si el stream está activo
+// ============================================================================
+async function checkStreamStatus() {
+    const streamKey = document.getElementById('streamKey')?.value || 'stream';
+
+    try {
+        const response = await fetch(`/api/stream-status/${streamKey}`);
+        const data = await response.json();
+
+        if (data.isLive) {
+            // Stream está activo
+            updateLiveIndicator(true);
+        } else {
+            // Stream no está activo
+            // Solo actualizar a offline si no estamos reproduciendo
+            if (!isPlaying) {
+                updateLiveIndicator(false);
+            }
+        }
+    } catch (error) {
+        console.error('Error verificando estado del stream:', error);
+    }
+}
+
+// ============================================================================
+// Chat Functions
+// ============================================================================
+function initializeChat() {
+    // Cargar username guardado
+    const usernameInput = document.getElementById('usernameInput');
+    if (username) {
+        usernameInput.value = username;
+    }
+
+    // Guardar username en localStorage cuando cambie
+    usernameInput.addEventListener('change', (e) => {
+        username = e.target.value.trim();
+        localStorage.setItem('streaming_username', username);
+    });
+
+    // Enviar mensaje con Enter
+    const chatInput = document.getElementById('chatInput');
+    chatInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            sendChatMessage();
+        }
+    });
+
+    console.log('💬 Chat inicializado');
+}
+
+function sendChatMessage() {
+    const usernameInput = document.getElementById('usernameInput');
+    const chatInput = document.getElementById('chatInput');
+    const message = chatInput.value.trim();
+    const user = usernameInput.value.trim() || 'Anónimo';
+
+    if (!message) {
+        return;
+    }
+
+    if (!socket || !socket.connected) {
+        showToast('No estás conectado al servidor');
+        return;
+    }
+
+    // Actualizar username en localStorage
+    username = user;
+    localStorage.setItem('streaming_username', username);
+
+    // Enviar mensaje al servidor
+    socket.emit('chat-message', {
+        streamKey: currentStreamKey,
+        username: user,
+        message: message
+    });
+
+    // Limpiar input
+    chatInput.value = '';
+}
+
+function displayChatMessage(data) {
+    const chatMessages = document.getElementById('chatMessages');
+
+    // Remover mensaje de bienvenida si existe
+    const welcome = chatMessages.querySelector('.chat-welcome');
+    if (welcome) {
+        welcome.remove();
+    }
+
+    // Crear elemento de mensaje
+    const messageElement = document.createElement('div');
+    messageElement.className = 'chat-message';
+
+    const usernameElement = document.createElement('div');
+    usernameElement.className = 'chat-message-username';
+    usernameElement.textContent = data.username;
+
+    const textElement = document.createElement('div');
+    textElement.className = 'chat-message-text';
+    textElement.textContent = data.message;
+
+    const timeElement = document.createElement('div');
+    timeElement.className = 'chat-message-time';
+    const time = new Date(data.timestamp);
+    timeElement.textContent = time.toLocaleTimeString('es-ES', {
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+
+    messageElement.appendChild(usernameElement);
+    messageElement.appendChild(textElement);
+    messageElement.appendChild(timeElement);
+
+    // Agregar mensaje al contenedor
+    chatMessages.appendChild(messageElement);
+
+    // Scroll automático hacia abajo
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+
+    // Limitar cantidad de mensajes (máximo 100)
+    const messages = chatMessages.querySelectorAll('.chat-message');
+    if (messages.length > 100) {
+        messages[0].remove();
+    }
+}
+
+// ============================================================================
 // Export para debugging
 // ============================================================================
 window.streamingApp = {
     loadStream,
     checkServerStatus,
+    checkStreamStatus,
+    sendChatMessage,
     player: () => player,
     video: () => video,
     config: CONFIG,
