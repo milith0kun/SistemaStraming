@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+.gradle/
+build/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Android
+*.apk
+*.aab
+*.dex
+*.class
+local.properties
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temp files
+*.tmp
+*.swp
+*~
+
+# Media files generados
+PlataformaSteaming/media/
+
+# Screenshots y archivos de debug
+*.png
+*.xml
+!**/src/**/*.xml
+!**/res/**/*.xml
+
+# Build outputs
+Streaming/app/build/
+Streaming/.gradle/

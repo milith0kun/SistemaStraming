@@ -1,0 +1,25 @@
+{
+  "name": "plataforma-streaming",
+  "version": "1.0.0",
+  "description": "Plataforma de recepción de streaming en vivo - Sistema IoT",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "media-server": "node media-server.js"
+  },
+  "keywords": [
+    "streaming",
+    "rtmp",
+    "hls",
+    "iot",
+    "embedded-systems"
+  ],
+  "author": "Sistema Streaming IoT",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "node-media-server": "^2.6.4",
+    "cors": "^2.8.5"
+  }
+}

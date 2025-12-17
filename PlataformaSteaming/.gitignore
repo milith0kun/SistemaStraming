@@ -1,0 +1,31 @@
+# Node modules
+node_modules/
+
+# Archivos de media generados
+media/
+*.m3u8
+*.ts
+*.flv
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment
+.env
+.env.local
+.env.production
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Build
+dist/
+build/

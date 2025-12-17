@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Plataforma de Streaming en Vivo - Sistema IoT con RTMP y HLS">
+    <title>🎬 Streaming en Vivo | Sistema IoT</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <!-- HLS.js para reproducción de streams -->
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@1.4.12/dist/hls.min.js"></script>
+    <!-- mpegts.js para reproducción HTTP-FLV (sucesor de flv.js, baja latencia) -->
+    <script src="https://cdn.jsdelivr.net/npm/mpegts.js@1.7.3/dist/mpegts.min.js"></script>
+
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <!-- Fondo animado -->
+    <div class="animated-background">
+        <div class="gradient-orb orb-1"></div>
+        <div class="gradient-orb orb-2"></div>
+        <div class="gradient-orb orb-3"></div>
+    </div>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <div class="logo-icon">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round" />
+                        <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                        <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round" />
+                    </svg>
+                </div>
+                <span class="logo-text">StreamHub</span>
+                <span class="logo-badge">IoT</span>
+            </div>
+            <nav class="nav">
+                <a href="#" class="nav-link active">En Vivo</a>
+                <a href="#stats" class="nav-link">Estadísticas</a>
+                <a href="#docs" class="nav-link">Documentación</a>
+            </nav>
+            <div class="header-actions">
+                <div class="server-status" id="serverStatus">
+                    <span class="status-dot offline"></span>
+                    <span class="status-text">Verificando...</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Hero Section -->
+        <section class="hero-section">
+            <div class="hero-content">
+                <h1 class="hero-title">
+                    <span class="gradient-text">Streaming en Vivo</span>
+                    <br>
+                    <span class="subtitle">Sistema de Video IoT</span>
+                </h1>
+                <p class="hero-description">
+                    Plataforma de recepción y visualización de streams de video en tiempo real
+                    desde dispositivos Android embebidos usando RTMP y HLS.
+                </p>
+            </div>
+        </section>
+
+        <!-- Stream Configuration -->
+        <section class="config-section">
+            <div class="config-card glass-card">
+                <div class="config-header">
+                    <h2 class="config-title">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2" />
+                            <path
+                                d="M12 1V3M12 21V23M4.22 4.22L5.64 5.64M18.36 18.36L19.78 19.78M1 12H3M21 12H23M4.22 19.78L5.64 18.36M18.36 5.64L19.78 4.22"
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                        </svg>
+                        Configuración del Stream
+                    </h2>
+                </div>
+                <div class="config-body">
+                    <div class="input-group">
+                        <label for="streamKey" class="input-label">Stream Key</label>
+                        <div class="input-wrapper">
+                            <input type="text" id="streamKey" class="input-field" placeholder="stream" value="stream">
+                            <button class="btn-icon" onclick="loadStream()" title="Cargar Stream">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                                    <polygon points="5,3 19,12 5,21" fill="currentColor" />
+                                </svg>
+                            </button>
+                        </div>
+                        <span class="input-hint">
+                            Este es el identificador único de tu transmisión
+                        </span>
+                    </div>
+
+                    <div class="stream-urls">
+                        <div class="url-item">
+                            <span class="url-label">RTMP (Android → Server)</span>
+                            <code class="url-code" id="rtmpUrl">rtmp://localhost:1935/live</code>
+                            <button class="btn-copy" onclick="copyToClipboard('rtmpUrl')" title="Copiar">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" stroke="currentColor"
+                                        stroke-width="2" />
+                                    <path
+                                        d="M5 15H4C2.89543 15 2 14.1046 2 13V4C2 2.89543 2.89543 2 4 2H13C14.1046 2 15 2.89543 15 4V5"
+                                        stroke="currentColor" stroke-width="2" />
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="url-item">
+                            <span class="url-label">HTTP-FLV (Server → Web)</span>
+                            <code class="url-code" id="hlsUrl">http://localhost:8000/live/stream.flv</code>
+                            <button class="btn-copy" onclick="copyToClipboard('hlsUrl')" title="Copiar">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" stroke="currentColor"
+                                        stroke-width="2" />
+                                    <path
+                                        d="M5 15H4C2.89543 15 2 14.1046 2 13V4C2 2.89543 2.89543 2 4 2H13C14.1046 2 15 2.89543 15 4V5"
+                                        stroke="currentColor" stroke-width="2" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Video Player Section -->
+        <section class="player-section">
+            <div class="player-container glass-card">
+                <div class="player-header">
+                    <div class="live-indicator" id="liveIndicator">
+                        <span class="live-dot"></span>
+                        <span class="live-text">ESPERANDO STREAM</span>
+                    </div>
+                    <div class="viewer-count" id="viewerCount">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="currentColor"
+                                stroke-width="2" />
+                            <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2" />
+                        </svg>
+                        <span>0 viewers</span>
+                    </div>
+                </div>
+
+                <div class="video-wrapper">
+                    <video id="videoPlayer" class="video-player" controls playsinline poster="">
+                        Tu navegador no soporta el elemento video.
+                    </video>
+
+                    <!-- Overlay cuando no hay stream -->
+                    <div class="video-overlay" id="videoOverlay">
+                        <div class="overlay-content">
+                            <div class="loader-animation">
+                                <div class="signal-wave">
+                                    <span></span>
+                                    <span></span>
+                                    <span></span>
+                                    <span></span>
+                                </div>
+                            </div>
+                            <h3 class="overlay-title">Esperando transmisión...</h3>
+                            <p class="overlay-text">
+                                Inicia el streaming desde tu dispositivo Android
+                            </p>
+                            <button class="btn-primary" onclick="loadStream()">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                                    <path
+                                        d="M4 12V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V12"
+                                        stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round" />
+                                    <polyline points="16 6 12 2 8 6" stroke="currentColor" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round" />
+                                    <line x1="12" y1="2" x2="12" y2="15" stroke="currentColor" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                                Conectar al Stream
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Player Controls Custom -->
+                <div class="player-controls">
+                    <div class="controls-left">
+                        <button class="control-btn" id="playPauseBtn" onclick="togglePlayPause()">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" id="playIcon">
+                                <polygon points="5,3 19,12 5,21" fill="currentColor" />
+                            </svg>
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" id="pauseIcon"
+                                style="display:none;">
+                                <rect x="6" y="4" width="4" height="16" fill="currentColor" />
+                                <rect x="14" y="4" width="4" height="16" fill="currentColor" />
+                            </svg>
+                        </button>
+                        <button class="control-btn" onclick="toggleMute()">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" id="volumeIcon">
+                                <polygon points="11,5 6,9 2,9 2,15 6,15 11,19" fill="currentColor" />
+                                <path d="M15.54 8.46a5 5 0 0 1 0 7.07M19.07 4.93a10 10 0 0 1 0 14.14"
+                                    stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                            </svg>
+                        </button>
+                        <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="100"
+                            onchange="changeVolume(this.value)">
+                    </div>
+                    <div class="controls-center">
+                        <span class="stream-quality" id="streamQuality">-- kbps</span>
+                    </div>
+                    <div class="controls-right">
+                        <button class="control-btn" onclick="toggleFullscreen()">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                <path
+                                    d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"
+                                    stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Stats Section -->
+        <section class="stats-section" id="stats">
+            <h2 class="section-title">📊 Estadísticas en Tiempo Real</h2>
+            <div class="stats-grid">
+                <div class="stat-card glass-card">
+                    <div class="stat-icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+                            <path d="M22 12h-4l-3 9L9 3l-3 9H2" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="bitrateValue">0</span>
+                        <span class="stat-label">Bitrate (kbps)</span>
+                    </div>
+                </div>
+
+                <div class="stat-card glass-card">
+                    <div class="stat-icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+                            <rect x="2" y="3" width="20" height="14" rx="2" stroke="currentColor" stroke-width="2" />
+                            <line x1="8" y1="21" x2="16" y2="21" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" />
+                            <line x1="12" y1="17" x2="12" y2="21" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" />
+                        </svg>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="resolutionValue">--</span>
+                        <span class="stat-label">Resolución</span>
+                    </div>
+                </div>
+
+                <div class="stat-card glass-card">
+                    <div class="stat-icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" />
+                            <polyline points="12,6 12,12 16,14" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="latencyValue">--</span>
+                        <span class="stat-label">Latencia (seg)</span>
+                    </div>
+                </div>
+
+                <div class="stat-card glass-card">
+                    <div class="stat-icon">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+                            <path
+                                d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                        </svg>
+                    </div>
+                    <div class="stat-info">
+                        <span class="stat-value" id="fpsValue">--</span>
+                        <span class="stat-label">FPS</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Documentation Section -->
+        <section class="docs-section" id="docs">
+            <h2 class="section-title">📚 Guía de Configuración</h2>
+            <div class="docs-grid">
+                <div class="doc-card glass-card">
+                    <div class="doc-number">1</div>
+                    <h3 class="doc-title">Servidor de Streaming</h3>
+                    <p class="doc-text">
+                        Inicia el servidor de medios localmente:
+                    </p>
+                    <code class="doc-code">npm run media-server</code>
+                    <p class="doc-note">
+                        Esto inicia el servidor RTMP en puerto 1935 y HTTP en 8000
+                    </p>
+                </div>
+
+                <div class="doc-card glass-card">
+                    <div class="doc-number">2</div>
+                    <h3 class="doc-title">App Android</h3>
+                    <p class="doc-text">
+                        Configura la app con estos parámetros:
+                    </p>
+                    <code class="doc-code">
+                        URL: rtmp://TU_IP:1935/live<br>
+                        Key: stream
+                    </code>
+                    <p class="doc-note">
+                        Reemplaza TU_IP con la IP de tu computadora
+                    </p>
+                </div>
+
+                <div class="doc-card glass-card">
+                    <div class="doc-number">3</div>
+                    <h3 class="doc-title">Visualización</h3>
+                    <p class="doc-text">
+                        Abre esta plataforma web y presiona "Conectar al Stream"
+                    </p>
+                    <code class="doc-code">http://localhost:3000</code>
+                    <p class="doc-note">
+                        El video aparecerá cuando el stream esté activo
+                    </p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <p class="footer-text">
+                Sistema de Streaming IoT - Proyecto de Sistemas Embebidos
+            </p>
+            <p class="footer-tech">
+                <span class="tech-badge">RTMP</span>
+                <span class="tech-badge">HLS</span>
+                <span class="tech-badge">H.264</span>
+                <span class="tech-badge">AAC</span>
+                <span class="tech-badge">Node.js</span>
+                <span class="tech-badge">Android</span>
+            </p>
+        </div>
+    </footer>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">
+        <span class="toast-message" id="toastMessage"></span>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
