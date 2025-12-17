@@ -24,7 +24,7 @@ package com.example.streaming.streaming
  * @param audioIsStereo Si el audio es estéreo
  */
 data class StreamConfig(
-        val rtmpUrl: String = "rtmp://3.134.159.236:1935/live",
+        val rtmpUrl: String = "rtmp://streamingpe.myvnc.com:1935/live",
         val streamKey: String = "stream",
 
         // Configuración de Video
