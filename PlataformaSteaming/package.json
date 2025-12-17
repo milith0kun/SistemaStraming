@@ -18,8 +18,10 @@
   "author": "Sistema Streaming IoT",
   "license": "MIT",
   "dependencies": {
+    "cors": "^2.8.5",
     "express": "^4.18.2",
     "node-media-server": "^2.6.4",
-    "cors": "^2.8.5"
+    "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.1"
   }
 }

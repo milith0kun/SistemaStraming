@@ -21,12 +21,16 @@ let isPlaying = false;
 let reconnectAttempts = 0;
 let statsInterval = null;
 const MAX_RECONNECT_ATTEMPTS = 5;
+let socket = null;
+let currentStreamKey = 'stream';
+let viewersCount = 0;
+let peakViewersCount = 0;
 
 // ============================================================================
 // Configuración
 // ============================================================================
 const CONFIG = {
-    mediaServerUrl: 'http://3.134.159.236:8000',
+    mediaServerUrl: 'https://streamingpe.myvnc.com',
     rtmpUrl: 'rtmp://3.134.159.236:1935/live',
     statusCheckInterval: 5000,
     statsUpdateInterval: 1000,
@@ -57,6 +61,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Actualizar URLs cuando cambie el stream key
     document.getElementById('streamKey').addEventListener('input', updateStreamUrls);
     updateStreamUrls();
+
+    // Inicializar Socket.IO para tracking de viewers
+    initializeSocket();
 
     console.log('🎬 Plataforma de Streaming inicializada');
 });
@@ -380,20 +387,25 @@ function hideOverlay() {
 function updateLiveIndicator(isLive) {
     const indicator = document.getElementById('liveIndicator');
     const text = indicator.querySelector('.live-text');
+    const streamStatus = document.getElementById('streamStatus');
 
     if (isLive) {
         indicator.classList.add('active');
-        text.textContent = 'EN VIVO';
+        text.textContent = 'LIVE';
+        if (streamStatus) streamStatus.textContent = 'Transmitiendo';
     } else {
         indicator.classList.remove('active');
-        text.textContent = 'ESPERANDO STREAM';
+        text.textContent = 'OFFLINE';
+        if (streamStatus) streamStatus.textContent = 'Esperando...';
     }
 }
 
 function updateStreamUrls() {
     const streamKey = document.getElementById('streamKey').value || 'stream';
-    document.getElementById('hlsUrl').textContent =
-        `${CONFIG.mediaServerUrl}/live/${streamKey}.flv`;
+    const streamKeyDisplay = document.getElementById('streamKeyDisplay');
+    if (streamKeyDisplay) {
+        streamKeyDisplay.textContent = streamKey;
+    }
 }
 
 // ============================================================================
@@ -449,6 +461,75 @@ function showToast(message) {
 }
 
 // ============================================================================
+// Socket.IO - Tracking de Viewers en Tiempo Real
+// ============================================================================
+function initializeSocket() {
+    try {
+        // Conectar a Socket.IO
+        socket = io({
+            transports: ['websocket', 'polling']
+        });
+
+        socket.on('connect', () => {
+            console.log('✅ Conectado a Socket.IO:', socket.id);
+            // Unirse al stream actual
+            joinStream(currentStreamKey);
+        });
+
+        socket.on('viewer-count', (data) => {
+            console.log('📊 Actualización de viewers:', data);
+            viewersCount = data.viewers || 0;
+            peakViewersCount = data.peakViewers || 0;
+            updateViewerDisplay();
+        });
+
+        socket.on('disconnect', () => {
+            console.log('⚠️ Desconectado de Socket.IO');
+        });
+
+        socket.on('connect_error', (error) => {
+            console.error('❌ Error de conexión Socket.IO:', error);
+        });
+
+    } catch (error) {
+        console.error('❌ Error inicializando Socket.IO:', error);
+    }
+}
+
+function joinStream(streamKey) {
+    if (socket && socket.connected) {
+        currentStreamKey = streamKey;
+        socket.emit('join-stream', streamKey);
+        console.log(`📺 Unido al stream: ${streamKey}`);
+    }
+}
+
+function leaveStream(streamKey) {
+    if (socket && socket.connected) {
+        socket.emit('leave-stream', streamKey);
+        console.log(`👋 Saliendo del stream: ${streamKey}`);
+    }
+}
+
+function updateViewerDisplay() {
+    const currentViewersElement = document.getElementById('currentViewers');
+    const currentViewers2Element = document.getElementById('currentViewers2');
+    const peakViewersElement = document.getElementById('peakViewersCount');
+
+    if (currentViewersElement) {
+        currentViewersElement.textContent = viewersCount;
+    }
+
+    if (currentViewers2Element) {
+        currentViewers2Element.textContent = viewersCount;
+    }
+
+    if (peakViewersElement) {
+        peakViewersElement.textContent = peakViewersCount;
+    }
+}
+
+// ============================================================================
 // Export para debugging
 // ============================================================================
 window.streamingApp = {
@@ -456,5 +537,7 @@ window.streamingApp = {
     checkServerStatus,
     player: () => player,
     video: () => video,
-    config: CONFIG
+    config: CONFIG,
+    socket: () => socket,
+    viewers: () => ({ current: viewersCount, peak: peakViewersCount })
 };
