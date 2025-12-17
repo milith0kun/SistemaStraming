@@ -68,6 +68,20 @@ dependencies {
     // Material Icons Extended
     implementation(libs.androidx.material.icons.extended)
     
+    // Socket.IO para Chat en vivo
+    implementation(libs.socket.io.client)
+    
+    // DataStore para persistencia de preferencias (tema oscuro/claro)
+    implementation(libs.androidx.datastore.preferences)
+    
+    // Gson para JSON parsing
+    implementation(libs.gson)
+    
+    // Vico para gráficas de estadísticas en tiempo real
+    implementation(libs.vico.compose)
+    implementation(libs.vico.compose.m3)
+    implementation(libs.vico.core)
+    
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

@@ -24,6 +24,18 @@ navigationCompose = "2.8.4"
 # Icons Extended
 materialIconsExtended = "1.7.5"
 
+# Socket.IO para Chat
+socketIO = "2.1.0"
+
+# DataStore para persistencia de preferencias
+dataStore = "1.1.1"
+
+# Gson para JSON parsing
+gson = "2.10.1"
+
+# Vico para gráficas
+vico = "1.13.1"
+
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
@@ -57,6 +69,20 @@ androidx-navigation-compose = { group = "androidx.navigation", name = "navigatio
 
 # Material Icons Extended
 androidx-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended", version.ref = "materialIconsExtended" }
+
+# Socket.IO para Chat en vivo
+socket-io-client = { group = "io.socket", name = "socket.io-client", version.ref = "socketIO" }
+
+# DataStore para persistencia de preferencias
+androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "dataStore" }
+
+# Gson para JSON parsing
+gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
+
+# Vico para gráficas de estadísticas
+vico-compose = { group = "com.patrykandpatrick.vico", name = "compose", version.ref = "vico" }
+vico-compose-m3 = { group = "com.patrykandpatrick.vico", name = "compose-m3", version.ref = "vico" }
+vico-core = { group = "com.patrykandpatrick.vico", name = "core", version.ref = "vico" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
