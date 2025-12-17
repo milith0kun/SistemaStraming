@@ -334,6 +334,46 @@ body {
     margin-bottom: 12px;
 }
 
+/* Chat Header */
+.chat-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.chat-header .sidebar-title {
+    margin-bottom: 0;
+}
+
+.btn-download-chat {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 6px 8px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-download-chat:hover {
+    background: var(--bg-hover);
+    border-color: var(--accent);
+    color: var(--accent);
+    transform: translateY(-1px);
+}
+
+.btn-download-chat:active {
+    transform: translateY(0);
+}
+
+.btn-download-chat svg {
+    display: block;
+}
+
 /* Chat Section */
 .chat-section {
     flex: 1;

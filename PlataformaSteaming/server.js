@@ -15,6 +15,7 @@ const cors = require('cors');
 const path = require('path');
 const http = require('http');
 const { Server } = require('socket.io');
+const db = require('./db');
 
 const app = express();
 const PORT = 3000;
@@ -105,6 +106,125 @@ app.get('/api/viewers/:streamKey?', (req, res) => {
     }
 });
 
+// API endpoint para obtener historial de chat
+app.get('/api/chat/:streamKey', (req, res) => {
+    const { streamKey } = req.params;
+    const { limit, offset, startDate, endDate } = req.query;
+
+    try {
+        const options = {
+            limit: limit ? parseInt(limit) : 1000,
+            offset: offset ? parseInt(offset) : 0,
+            startDate: startDate ? parseInt(startDate) : undefined,
+            endDate: endDate ? parseInt(endDate) : undefined
+        };
+
+        const messages = db.getChatHistory(streamKey, options);
+        const stats = db.getChatStats(streamKey);
+
+        res.json({
+            streamKey,
+            stats: {
+                totalMessages: stats.total_messages || 0,
+                uniqueUsers: stats.unique_users || 0,
+                firstMessage: stats.first_message,
+                lastMessage: stats.last_message
+            },
+            messages: messages.map(msg => ({
+                id: msg.message_id,
+                username: msg.username,
+                message: msg.message,
+                timestamp: msg.timestamp
+            }))
+        });
+    } catch (error) {
+        console.error('[API] Error obteniendo historial de chat:', error);
+        res.status(500).json({ error: 'Error al obtener historial de chat' });
+    }
+});
+
+// API endpoint para descargar historial de chat en formato TXT
+app.get('/api/chat/:streamKey/download', (req, res) => {
+    const { streamKey } = req.params;
+
+    try {
+        const messages = db.getChatHistory(streamKey, { limit: 100000 });
+        const stats = db.getChatStats(streamKey);
+
+        if (!messages || messages.length === 0) {
+            return res.status(404).send('No hay mensajes para este stream');
+        }
+
+        // Generar contenido TXT
+        let txtContent = '═══════════════════════════════════════════════════════════════\n';
+        txtContent += `  HISTORIAL DE CHAT - Stream: ${streamKey}\n`;
+        txtContent += '═══════════════════════════════════════════════════════════════\n\n';
+        txtContent += `Total de mensajes: ${stats.total_messages || 0}\n`;
+        txtContent += `Usuarios únicos: ${stats.unique_users || 0}\n`;
+
+        if (stats.first_message) {
+            const firstDate = new Date(stats.first_message);
+            const lastDate = new Date(stats.last_message);
+            txtContent += `Primer mensaje: ${firstDate.toLocaleString('es-ES')}\n`;
+            txtContent += `Último mensaje: ${lastDate.toLocaleString('es-ES')}\n`;
+        }
+
+        txtContent += '\n═══════════════════════════════════════════════════════════════\n';
+        txtContent += '  MENSAJES\n';
+        txtContent += '═══════════════════════════════════════════════════════════════\n\n';
+
+        // Agregar cada mensaje
+        messages.forEach((msg, index) => {
+            const date = new Date(msg.timestamp);
+            const timeStr = date.toLocaleTimeString('es-ES', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            const dateStr = date.toLocaleDateString('es-ES');
+
+            txtContent += `[${dateStr} ${timeStr}] ${msg.username}: ${msg.message}\n`;
+        });
+
+        txtContent += '\n═══════════════════════════════════════════════════════════════\n';
+        txtContent += `  FIN DEL HISTORIAL - ${messages.length} mensajes\n`;
+        txtContent += '═══════════════════════════════════════════════════════════════\n';
+
+        // Configurar headers para descarga
+        const filename = `chat_${streamKey}_${Date.now()}.txt`;
+        res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        res.send(txtContent);
+
+        console.log(`[API] Chat descargado: ${streamKey} (${messages.length} mensajes)`);
+    } catch (error) {
+        console.error('[API] Error descargando chat:', error);
+        res.status(500).json({ error: 'Error al descargar historial de chat' });
+    }
+});
+
+// API endpoint para obtener todos los streams con chat
+app.get('/api/streams-with-chat', (req, res) => {
+    try {
+        const streams = db.getAllStreamsWithChat();
+        res.json({
+            totalStreams: streams.length,
+            streams: streams.map(stream => ({
+                streamKey: stream.stream_key,
+                messageCount: stream.message_count,
+                uniqueUsers: stream.unique_users,
+                firstMessage: stream.first_message,
+                lastMessage: stream.last_message,
+                firstMessageDate: new Date(stream.first_message).toISOString(),
+                lastMessageDate: new Date(stream.last_message).toISOString()
+            }))
+        });
+    } catch (error) {
+        console.error('[API] Error obteniendo streams:', error);
+        res.status(500).json({ error: 'Error al obtener streams' });
+    }
+});
+
 // Socket.IO - Manejo de conexiones de viewers
 io.on('connection', (socket) => {
     console.log(`[Socket.IO] Cliente conectado: ${socket.id}`);
@@ -164,13 +284,25 @@ io.on('connection', (socket) => {
 
         // Prevenir mensajes muy largos
         const sanitizedMessage = message.substring(0, 500);
+        const sanitizedUsername = username.substring(0, 50);
+        const messageId = Date.now() + socket.id;
+        const timestamp = Date.now();
+
+        // Guardar mensaje en la base de datos
+        db.saveChatMessage({
+            messageId: messageId,
+            streamKey: streamKey,
+            username: sanitizedUsername,
+            message: sanitizedMessage,
+            timestamp: timestamp
+        });
 
         // Emitir mensaje a todos en el stream
         io.to(streamKey).emit('chat-message', {
-            id: Date.now() + socket.id,
-            username: username.substring(0, 50),
+            id: messageId,
+            username: sanitizedUsername,
             message: sanitizedMessage,
-            timestamp: Date.now()
+            timestamp: timestamp
         });
     });
 

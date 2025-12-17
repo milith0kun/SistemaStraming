@@ -669,6 +669,45 @@ function displayChatMessage(data) {
     }
 }
 
+/**
+ * Descargar el historial de chat completo en formato TXT
+ */
+async function downloadChatHistory() {
+    const streamKey = document.getElementById('streamKey').value || 'stream';
+
+    try {
+        showToast('Descargando historial del chat...');
+
+        // Primero verificar si hay mensajes
+        const checkResponse = await fetch(`/api/chat/${streamKey}`);
+        const chatData = await checkResponse.json();
+
+        if (!chatData.messages || chatData.messages.length === 0) {
+            showToast('No hay mensajes en el historial de este stream');
+            return;
+        }
+
+        // Descargar el archivo TXT
+        const downloadUrl = `/api/chat/${streamKey}/download`;
+
+        // Crear un elemento <a> temporal para descargar el archivo
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = `chat_${streamKey}_${Date.now()}.txt`;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        showToast(`✅ Descargando ${chatData.stats.totalMessages} mensajes`);
+        console.log(`📥 Chat descargado: ${streamKey} (${chatData.stats.totalMessages} mensajes)`);
+
+    } catch (error) {
+        console.error('Error descargando historial de chat:', error);
+        showToast('❌ Error al descargar el historial del chat');
+    }
+}
+
 // ============================================================================
 // Export para debugging
 // ============================================================================
@@ -677,6 +716,7 @@ window.streamingApp = {
     checkServerStatus,
     checkStreamStatus,
     sendChatMessage,
+    downloadChatHistory,
     player: () => player,
     video: () => video,
     config: CONFIG,
