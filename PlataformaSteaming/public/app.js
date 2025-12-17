@@ -26,8 +26,8 @@ const MAX_RECONNECT_ATTEMPTS = 5;
 // Configuración
 // ============================================================================
 const CONFIG = {
-    mediaServerUrl: 'http://localhost:8000',
-    rtmpUrl: 'rtmp://localhost:1935/live',
+    mediaServerUrl: 'http://3.134.159.236:8000',
+    rtmpUrl: 'rtmp://3.134.159.236:1935/live',
     statusCheckInterval: 5000,
     statsUpdateInterval: 1000,
 };

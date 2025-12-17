@@ -68,7 +68,7 @@ fun StreamingScreen() {
             )
 
     // Estados de la UI
-    var rtmpUrl by remember { mutableStateOf("rtmp://192.168.1.124:1935/live") }
+    var rtmpUrl by remember { mutableStateOf("rtmp://3.134.159.236:1935/live") }
     var streamKey by remember { mutableStateOf("stream") }
     var showSettings by remember { mutableStateOf(false) }
     var selectedQuality by remember { mutableStateOf("HIGH") }

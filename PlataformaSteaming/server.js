@@ -25,8 +25,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 // API endpoint para obtener configuración
 app.get('/api/config', (req, res) => {
     res.json({
-        mediaServerUrl: 'http://localhost:8000',
-        rtmpUrl: 'rtmp://localhost:1935/live',
+        mediaServerUrl: 'http://3.134.159.236:8000',
+        rtmpUrl: 'rtmp://3.134.159.236:1935/live',
         defaultStreamKey: 'stream'
     });
 });
@@ -34,7 +34,7 @@ app.get('/api/config', (req, res) => {
 // API endpoint para verificar estado del servidor de medios
 app.get('/api/status', async (req, res) => {
     try {
-        const response = await fetch('http://localhost:8000/api/server');
+        const response = await fetch('http://3.134.159.236:8000/api/server');
         const data = await response.json();
         res.json({ status: 'online', mediaServer: data });
     } catch (error) {
@@ -47,14 +47,15 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Iniciar servidor
-app.listen(PORT, () => {
+// Iniciar servidor en todas las interfaces
+app.listen(PORT, '0.0.0.0', () => {
     console.log('');
     console.log('╔════════════════════════════════════════════════════════════════╗');
     console.log('║          🌐 PLATAFORMA WEB DE STREAMING                        ║');
     console.log('╠════════════════════════════════════════════════════════════════╣');
     console.log('║                                                                ║');
-    console.log(`║  🖥️  Web App:        http://localhost:${PORT}                      ║`);
+    console.log(`║  🖥️  Web App:        http://3.134.159.236:${PORT}                  ║`);
+    console.log('║  🌍  Escuchando en:  0.0.0.0:${PORT}                           ║');
     console.log('║                                                                ║');
     console.log('║  Asegúrate de que el Media Server esté corriendo:             ║');
     console.log('║  npm run media-server                                         ║');

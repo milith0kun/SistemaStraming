@@ -40,19 +40,21 @@ const config = {
         allow_origin: '*',
         api: true
     },
-    trans: {
-        ffmpeg: 'ffmpeg', // Asegúrate de tener FFmpeg instalado
-        tasks: [
-            {
-                app: 'live',
-                hls: true,
-                hlsFlags: '[hls_time=2:hls_list_size=3:hls_flags=delete_segments]',
-                hlsKeep: false, // Limpiar segmentos cuando el stream termine
-                dash: false,
-                mp4: false
-            }
-        ]
-    },
+    // Trans deshabilitado temporalmente debido a bug en node-media-server
+    // El streaming funcionará con HTTP-FLV que no requiere transcodificación
+    // trans: {
+    //     ffmpeg: '/usr/bin/ffmpeg', // Ruta completa a FFmpeg
+    //     tasks: [
+    //         {
+    //             app: 'live',
+    //             hls: true,
+    //             hlsFlags: '[hls_time=2:hls_list_size=3:hls_flags=delete_segments]',
+    //             hlsKeep: false, // Limpiar segmentos cuando el stream termine
+    //             dash: false,
+    //             mp4: false
+    //         }
+    //     ]
+    // },
     auth: {
         api: false, // Sin autenticación para desarrollo local
         publish: false,
@@ -87,12 +89,12 @@ nms.on('postPublish', (id, StreamPath, args) => {
     console.log('║                    🎬 STREAM EN VIVO                           ║');
     console.log('╠════════════════════════════════════════════════════════════════╣');
     console.log('║  HLS URL:                                                      ║');
-    console.log(`║  http://localhost:8000${StreamPath}/index.m3u8`);
+    console.log(`║  http://3.134.159.236:8000${StreamPath}/index.m3u8`);
     console.log('║                                                                ║');
     console.log('║  HTTP-FLV URL (baja latencia):                                 ║');
-    console.log(`║  http://localhost:8000${StreamPath}.flv`);
+    console.log(`║  http://3.134.159.236:8000${StreamPath}.flv`);
     console.log('║                                                                ║');
-    console.log('║  Abre la plataforma web en: http://localhost:3000              ║');
+    console.log('║  Abre la plataforma web en: http://3.134.159.236:3000          ║');
     console.log('╚════════════════════════════════════════════════════════════════╝');
     console.log('');
 });
@@ -121,16 +123,16 @@ console.log('╔═════════════════════�
 console.log('║          🚀 SERVIDOR DE STREAMING INICIADO                     ║');
 console.log('╠════════════════════════════════════════════════════════════════╣');
 console.log('║                                                                ║');
-console.log('║  📡 RTMP Server:    rtmp://localhost:1935/live                 ║');
-console.log('║  🌐 HTTP Server:    http://localhost:8000                      ║');
-console.log('║  📊 API Status:     http://localhost:8000/api/server           ║');
+console.log('║  📡 RTMP Server:    rtmp://3.134.159.236:1935/live             ║');
+console.log('║  🌐 HTTP Server:    http://3.134.159.236:8000                  ║');
+console.log('║  📊 API Status:     http://3.134.159.236:8000/api/server       ║');
 console.log('║                                                                ║');
 console.log('║  Para transmitir desde Android:                                ║');
-console.log('║  URL: rtmp://TU_IP_LOCAL:1935/live                             ║');
+console.log('║  URL: rtmp://3.134.159.236:1935/live                           ║');
 console.log('║  Stream Key: stream (o cualquier nombre)                       ║');
 console.log('║                                                                ║');
 console.log('║  Para ver el stream:                                           ║');
-console.log('║  http://localhost:8000/live/stream/index.m3u8                  ║');
+console.log('║  http://3.134.159.236:8000/live/stream/index.m3u8              ║');
 console.log('║                                                                ║');
 console.log('╚════════════════════════════════════════════════════════════════╝');
 console.log('');
